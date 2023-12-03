@@ -1,5 +1,15 @@
 <?php
 
+require_once(dirname( __FILE__ ) . '/../pel/autoload.php');
+
+use lsolesen\pel\PelExif;
+use lsolesen\pel\PelTiff;
+use lsolesen\pel\PelIfd;
+use lsolesen\pel\PelJpeg;
+use lsolesen\pel\PelEntryAscii;
+use lsolesen\pel\PelEntryCopyright;
+use lsolesen\pel\PelTag;
+
 function jkpg_adobe_date_to_db($d) {
   $datetime = new DateTime($d);
   return $datetime->format('Y-m-d H:i:s');
@@ -9,7 +19,8 @@ function jkpg_mgmt_adobe_client() {
   $options = get_option( 'jkpg_options' );
   $lrc = new JKPGAdobeLRClient(
     $options['jkpg_setting_adobe_clientid'],
-    $options['jkpg_setting_adobe_token']);
+    $options['jkpg_setting_
+    adobe_token']);
   return $lrc;
 }
 
@@ -229,9 +240,27 @@ function jkpg_mgmt_prepare_renditions($adobe_id) {
       if ($geom['width'] > $sz && $geom['height'] > $sz)
         $newpic->resizeImage($sz,$sz, imagick::FILTER_LANCZOS, 0.9, true);
 
+      // write out generated image
       $newgeom = $newpic->getImageGeometry();
       $gensz = $newgeom['width'] . "x" . $newgeom['height'];
-      $newpic->writeImage(jkpg_pic_path($pic->adobe_id, $gensz));
+      $fn = jkpg_pic_path($pic->adobe_id, $gensz);
+      $newpic->writeImage($fn);
+
+      // clear possible old exif, add chosen fields
+      $jpeg = new PelJpeg($fn);
+      $jpeg->clearExif();
+      $exif = new PelExif();
+      $tiff = new PelTiff();
+      $ifd0 = new PelIfd(PelIfd::IFD0);
+      $tiff->setIfd($ifd0);
+      $exif->setTiff($tiff);
+      $jpeg->setExif($exif);
+
+      $entry = new PelEntryAscii(PelTag::ARTIST, $options['jkpg_setting_pictures_artist']);
+      $ifd0->addEntry($entry);
+      $entry = new PelEntryCopyright($options['jkpg_setting_pictures_copyright'], $options['jkpg_setting_pictures_copyright']);
+      $ifd0->addEntry($entry);
+      $jpeg->saveFile($fn);
 
       $generated_sizes[] = $gensz;
     }

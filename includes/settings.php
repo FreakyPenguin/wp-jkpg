@@ -87,7 +87,20 @@ function jkpg_settings_init() {
 		'jkpg',
 		'jkpg_section_pictures',
 	);
-
+  add_settings_field(
+		'jkpg_setting_pictures_artist',
+                'Artist (for metadata)',
+		'jkpg_setting_pictures_artist',
+		'jkpg',
+		'jkpg_section_pictures',
+	);
+  add_settings_field(
+		'jkpg_setting_pictures_copyright',
+                'Copyright (for metadata)',
+		'jkpg_setting_pictures_copyright',
+		'jkpg',
+		'jkpg_section_pictures',
+	);
   // Not pretty, but oauth sets the WP reserved "error" query parameter. This
   // causes WP to redirect and remove the parameter before displaying the page.
   // so here we save the error before it's too late
@@ -247,4 +260,14 @@ function jkpg_setting_pictures_wmx() {
 function jkpg_setting_pictures_wmy() {
   $options = get_option( 'jkpg_options' );
   echo "<input id='jkpg_setting_pictures_wmy' name='jkpg_options[jkpg_setting_pictures_wmy]' type='text' value='" . esc_attr( $options['jkpg_setting_pictures_wmy'] ) . "' />";
+}
+
+function jkpg_setting_pictures_artist() {
+  $options = get_option( 'jkpg_options' );
+  echo "<input id='jkpg_setting_pictures_artist' name='jkpg_options[jkpg_setting_pictures_artist]' type='text' value='" . esc_attr( $options['jkpg_setting_pictures_artist'] ) . "' />";
+}
+
+function jkpg_setting_pictures_copyright() {
+  $options = get_option( 'jkpg_options' );
+  echo "<input id='jkpg_setting_pictures_copyright' name='jkpg_options[jkpg_setting_pictures_copyright]' type='text' value='" . esc_attr( $options['jkpg_setting_pictures_copyright'] ) . "' />";
 }
