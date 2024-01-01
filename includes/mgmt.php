@@ -176,8 +176,6 @@ function jkpg_mgmt_prepare_renditions($adobe_id) {
   $alb = jkpg_db_album_get_adobe($adobe_id);
   $picids = jkpg_db_p2a_pic_ids($alb->id);
 
-  echo "Preparing renditions\n";
-
   $options = get_option( 'jkpg_options' );
   $sizes = explode(",", $options['jkpg_setting_pictures_sizes']);
 
@@ -211,7 +209,6 @@ function jkpg_mgmt_prepare_renditions($adobe_id) {
     $wminstance = clone $watermark;
     $wmW = round(($options['jkpg_setting_pictures_wmwidth'] / 100) * $geom['width']);
     $wmH = round(($options['jkpg_setting_pictures_wmheight'] / 100) * $geom['height']);
-    echo $geom['width'] . "  " . $options['jkpg_setting_pictures_wmwidth'] . "  " . $wmH . "\n";
     $wminstance->resizeImage($wmW, $wmH, imagick::FILTER_LANCZOS, 0.9, true);
     $wmiG = $wminstance->getImageGeometry();
     $wmW = $wmiG['width'];
@@ -270,6 +267,48 @@ function jkpg_mgmt_prepare_renditions($adobe_id) {
   
 }
 
+function jkpg_mgmt_create_post($adobe_id) {
+  $alb = jkpg_db_album_get_adobe($adobe_id);
+  $posts = get_posts(array(
+      'post_type' => 'jkpg',
+      'meta_query' => array(
+        array(
+          'key' => 'jkpg_album',
+          'value' => $alb->id,
+        )
+      ),
+  ));
+
+  if ($posts) {
+    echo "Found post: " . $posts[0]->id . "<br>";
+  } else {
+    $pid = wp_insert_post(array(
+        'post_type' => 'jkpg',
+        'post_date' => $alb->created,
+        'post_title' => $alb->title,
+        'post_status' => 'publish',
+        'meta_input' => array(
+          'jkpg_album' => $alb->id,
+        ),
+    ));
+    echo "Created " . $pid . "<br>";
+  }
+
+}
+
+function jkpg_mgmt_album_tree($parent_id) {
+  echo "<ul>\n";
+  foreach (jkpg_db_sets_get_in($parent_id) as $set) {
+    echo "<li>Set: {$set->title}\n";
+    jkpg_mgmt_album_tree($set->adobe_id);
+    echo "</li>\n";
+  }
+  foreach (jkpg_db_albums_get_in($parent_id) as $alb) {
+    echo "<li>Album: {$alb->title}</li>\n";
+  }
+  echo "</ul>\n";
+}
+
 function jkpg_mgmt_page_html() {
   $options = get_option( 'jkpg_options' );
 
@@ -284,27 +323,17 @@ function jkpg_mgmt_page_html() {
       jkpg_mgmt_fetch_renditions($_REQUEST['fetch_renditions']);
     } else if (isset($_REQUEST['prepare_renditions'])) {
       jkpg_mgmt_prepare_renditions($_REQUEST['prepare_renditions']);
+    } else if (isset($_REQUEST['create_post'])) {
+      jkpg_mgmt_create_post($_REQUEST['create_post']);
     }
   } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
   }
-  /*$lrc = new JKPGAdobeLRClient(
-    $options['jkpg_setting_adobe_clientid'],
-    $options['jkpg_setting_adobe_token']);
-  try {
-    $cat = $lrc->get_catalog();
+
   ?>
-    <div class="wrap">
-      <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-      <pre>
-      <?php
-      
-      $albums_req = $lrc->get_all_albums($cat->id);
-      print_r($albums_req);
-      ?></pre>
-    </div>
+  <div class="wrap">
+    <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+  <?php jkpg_mgmt_album_tree(''); ?>
+  </div>
   <?php
-  } catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
-  }*/
 }

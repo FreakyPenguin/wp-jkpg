@@ -11,16 +11,21 @@
 
 require_once dirname( __FILE__ ) .'/includes/adobe-api.php';
 require_once dirname( __FILE__ ) .'/includes/db.php';
+require_once dirname( __FILE__ ) .'/includes/post.php';
 require_once dirname( __FILE__ ) .'/includes/settings.php';
 require_once dirname( __FILE__ ) .'/includes/mgmt.php';
 
 
 /**
- * Register the "book" custom post type
+ * add jkpg css
  */
-/*function jkpg_setup_post_type() {
+function jkpg_register_assets() {
+  wp_enqueue_style( 'jkpgStylesheet',
+    plugin_dir_url(__FILE__) . 'assets/css/main.css');
+  wp_enqueue_script( 'jkpgStylesheet',
+    plugin_dir_url(__FILE__) . 'assets/js/single.js', array( 'jquery' ));
 }
-add_action( 'init', 'jkpg_setup_post_type' );*/
+add_action( 'init', 'jkpg_register_assets' );
 
 
 /**

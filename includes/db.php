@@ -92,6 +92,11 @@ function jkpg_db_set_get_adobe($adobe_id) {
   return $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}jkpg_sets WHERE adobe_id = '$adobe_id'" );
 }
 
+function jkpg_db_sets_get_in($parent_id) {
+  global $wpdb;
+  return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_sets WHERE parent_id = '$parent_id'" );
+}
+
 function jkpg_db_set_update($id, $parent_id, $updated, $title)
 {
   global $wpdb;
@@ -118,9 +123,19 @@ function jkpg_db_set_insert($adobe_id, $parent_id, $created, $updated, $title) {
 }
 
 
+function jkpg_db_album_get($id) {
+  global $wpdb;
+  return $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}jkpg_albums WHERE id = '$id'" );
+}
+
 function jkpg_db_album_get_adobe($adobe_id) {
   global $wpdb;
   return $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}jkpg_albums WHERE adobe_id = '$adobe_id'" );
+}
+
+function jkpg_db_albums_get_in($parent_id) {
+  global $wpdb;
+  return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_albums WHERE set_id = '$parent_id'" );
 }
 
 function jkpg_db_album_update($id, $set_id, $updated, $title, $desc, $sync)
