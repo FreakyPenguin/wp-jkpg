@@ -17,6 +17,7 @@ div.jkpg-grid div.grid-item span.title {
 }
 
 body.single-jkpg .content-area,
+body.post-type-archive-jkpg .content-area {
 	float: none;
 	width: 100%;
 }
