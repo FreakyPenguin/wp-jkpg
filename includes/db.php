@@ -93,9 +93,14 @@ function jkpg_db_set_get_adobe($adobe_id) {
   return $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}jkpg_sets WHERE adobe_id = '$adobe_id'" );
 }
 
+function jkpg_db_sets_get() {
+  global $wpdb;
+  return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_sets WHERE deleted = 0" );
+}
+
 function jkpg_db_sets_get_in($parent_id) {
   global $wpdb;
-  return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_sets WHERE parent_id = '$parent_id'" );
+  return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_sets WHERE parent_id = '$parent_id' AND deleted = 0" );
 }
 
 function jkpg_db_set_update($id, $parent_id, $updated, $title)
@@ -104,7 +109,7 @@ function jkpg_db_set_update($id, $parent_id, $updated, $title)
   $wpdb->query(
     $wpdb->prepare(
        "UPDATE {$wpdb->prefix}jkpg_sets SET
-          parent_id = %s, updated = %s, title = %s
+          parent_id = %s, updated = %s, title = %s, deleted = 0
         WHERE id = %d",
        $parent_id, $updated, $title, $id
     )
@@ -123,6 +128,13 @@ function jkpg_db_set_insert($adobe_id, $parent_id, $created, $updated, $title) {
   );
 }
 
+function jkpg_db_set_deleted($id) {
+  global $wpdb;
+  $wpdb->query(
+    "UPDATE {$wpdb->prefix}jkpg_sets SET deleted = 1 WHERE id = $id"
+  );
+}
+
 
 function jkpg_db_album_get($id) {
   global $wpdb;
@@ -134,9 +146,14 @@ function jkpg_db_album_get_adobe($adobe_id) {
   return $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}jkpg_albums WHERE adobe_id = '$adobe_id'" );
 }
 
+function jkpg_db_albums_get() {
+  global $wpdb;
+  return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_albums WHERE deleted = 0" );
+}
+
 function jkpg_db_albums_get_in($parent_id) {
   global $wpdb;
-  return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_albums WHERE set_id = '$parent_id'" );
+  return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_albums WHERE set_id = '$parent_id' and deleted = 0" );
 }
 
 function jkpg_db_album_update($id, $set_id, $updated, $title, $desc, $sync,
@@ -147,7 +164,7 @@ function jkpg_db_album_update($id, $set_id, $updated, $title, $desc, $sync,
     $wpdb->prepare(
        "UPDATE {$wpdb->prefix}jkpg_albums SET
           set_id = %s, updated = %s, title = %s, description = %s,
-          synchronized = %d, piclist_fetched = %d
+          synchronized = %d, piclist_fetched = %d, deleted = 0
         WHERE id = %d",
        $set_id, $updated, $title, $desc, $sync, $piclist_fetched, $id
     )
@@ -164,6 +181,13 @@ function jkpg_db_album_insert($adobe_id, $set_id, $created, $updated, $title,
        VALUES ( %s, %s, %s, %s, %s, %s )",
        $adobe_id, $set_id, $created, $updated, $title, $desc
     )
+  );
+}
+
+function jkpg_db_album_deleted($id) {
+  global $wpdb;
+  $wpdb->query(
+    "UPDATE {$wpdb->prefix}jkpg_albums SET deleted = 1 WHERE id = $id"
   );
 }
 
@@ -191,7 +215,8 @@ function jkpg_db_pic_update($id, $updated, $title, $desc, $sync)
   $wpdb->query(
     $wpdb->prepare(
        "UPDATE {$wpdb->prefix}jkpg_pictures SET
-          updated = %s, title = %s, description = %s, synchronized = %d
+          updated = %s, title = %s, description = %s, synchronized = %d,
+          deleted = 0
         WHERE id = %d",
        $updated, $title, $desc, $sync, $id
     )
@@ -210,6 +235,13 @@ function jkpg_db_pic_insert($adobe_id, $created, $updated, $title, $desc) {
   );
 }
 
+function jkpg_db_pic_deleted($id) {
+  global $wpdb;
+  $wpdb->query(
+    "UPDATE {$wpdb->prefix}jkpg_pictures SET deleted = 1 WHERE id = $id"
+  );
+}
+
 function jkpg_db_pic_setflag($id, $flagname, $val) {
   global $wpdb;
   $wpdb->query(
@@ -223,6 +255,7 @@ function jkpg_db_pic_setsizes($id, $sizes) {
     "UPDATE {$wpdb->prefix}jkpg_pictures SET sizes = '$sizes' WHERE id = $id"
   );
 }
+
 
 function jkpg_db_p2a_get($pic_id, $album_id) {
   global $wpdb;
@@ -246,6 +279,16 @@ function jkpg_db_p2a_pic_ids($album_id) {
     $wpdb->prepare(
        "SELECT picture FROM {$wpdb->prefix}jkpg_p2a
        WHERE album = %d", $album_id
+    )
+  );
+}
+
+function jkpg_db_p2a_delete($pic_id, $album_id) {
+  global $wpdb;
+  return $wpdb->get_col(
+    $wpdb->prepare(
+       "DELETE FROM {$wpdb->prefix}jkpg_p2a
+       WHERE picture = %d AND album = %d", $pic_id, $album_id
     )
   );
 }

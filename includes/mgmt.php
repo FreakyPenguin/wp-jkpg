@@ -33,7 +33,6 @@ function jkpg_sync_notice($msg) {
     $options['jkpg_sync_notices'] = [];
   $options['jkpg_sync_notices'][] = $msg;
   update_option('jkpg_options', $options);
-  print_r($options);
 }
 
 function jkpg_adobe_date_to_db($d) {
@@ -54,6 +53,9 @@ function jkpg_mgmt_sync_albums() {
   $cat = $lrc->get_catalog();
   $albums_req = $lrc->get_all_albums($cat->id);
 
+  $alb_ids = array();
+  $set_ids = array();
+
   foreach ($albums_req as $alb) {
     if ($alb->type != 'album') {
       jkpg_sync_warn("Non-album entry {$alb->id} of type {$alb->type}, ignoring");
@@ -65,6 +67,8 @@ function jkpg_mgmt_sync_albums() {
       $parent_id = $alb->payload->parent->id;
 
     if ($alb->subtype == 'collection') {
+      $alb_ids[] = $alb->id;
+
       $la = jkpg_db_album_get_adobe($alb->id);
       if ($la) {
         $ud = jkpg_adobe_date_to_db($alb->updated);
@@ -85,6 +89,8 @@ function jkpg_mgmt_sync_albums() {
 
       }
     } else if ($alb->subtype == 'collection_set') {
+      $set_ids[] = $alb->id;
+
       $la = jkpg_db_set_get_adobe($alb->id);
       if ($la) {
         jkpg_db_set_update($la->id, $parent_id,
@@ -98,6 +104,20 @@ function jkpg_mgmt_sync_albums() {
     } else {
       jkpg_sync_warn("Unknown subtype {$alb->subtype} for {$alb->id}, ignoring");
       continue;
+    }
+  }
+
+  // now check for deleted sets & albums
+  $sets = jkpg_db_sets_get();
+  foreach ($sets as $set) {
+    if (!in_array($set->adobe_id, $set_ids)) {
+      jkpg_db_set_deleted($set->id);
+    }
+  }
+  $sets = jkpg_db_albums_get();
+  foreach ($albums as $alb) {
+    if (!in_array($alb->adobe_id, $alb_ids)) {
+      jkpg_db_album_deleted($alb->id);
     }
   }
 
@@ -115,11 +135,12 @@ function jkpg_mgmt_sync_album($adobe_id) {
   $cat = $lrc->get_catalog();
   $assets = $lrc->get_all_assets($cat->id, $adobe_id);
 
+  $pic_ids = array();
+
   foreach ($assets as $a) {
     // just skip non-images for now
     if ($a->subtype != 'image')
       continue;
-
 
     $pic = jkpg_db_pic_get_adobe($a->id);
     if ($pic) {
@@ -140,10 +161,19 @@ function jkpg_mgmt_sync_album($adobe_id) {
 
       $pic = jkpg_db_pic_get_adobe($a->id);
     }
+    $pic_ids[] = $pic->id;
 
     $p2a = jkpg_db_p2a_get($pic->id, $alb->id);
     if (!$p2a) {
       jkpg_db_p2a_insert($pic->id, $alb->id);
+    }
+  }
+
+  // remove deleted pics
+  $pics = jkpg_db_p2a_pic_ids($alb->id);
+  foreach ($pics as $picid) {
+    if (!in_array($picid, $pic_ids)) {
+      jkpg_db_p2a_delete($picid, $alb->id);
     }
   }
 
@@ -158,17 +188,12 @@ function jkpg_mgmt_req_renditions($adobe_id) {
   $alb = jkpg_db_album_get_adobe($adobe_id);
   $picids = jkpg_db_p2a_pic_ids($alb->id);
 
-  print_r($picids);
-
   foreach ($picids as $id) {
     $pic = jkpg_db_pic_get($id);
     if ($pic->requested)
       continue;
-    //echo "requesting {$pic->id}<br/>";
     $x = $lrc->request_rendition($cat->id, $pic->adobe_id);
-    //print_r($x);
     jkpg_db_pic_setflag($pic->id, 'requested', 1);
-    //echo "<br/>";
   } 
 
   jkpg_sync_notice("Requested Renditions in Album $adobe_id.");
@@ -306,6 +331,8 @@ function jkpg_mgmt_prepare_renditions($adobe_id) {
     jkpg_db_pic_setsizes($pic->id, implode(",", $generated_sizes));
     jkpg_db_pic_setflag($pic->id, 'readied', 1);
   }
+
+  jkpg_db_album_setflag($alb->id, 'synchronized', 1);
   jkpg_sync_notice("Prepared Renditions in Album $adobe_id.");
 }
 
@@ -390,11 +417,14 @@ function jkpg_collect_albums($parent_id) {
 function jkpg_mgmt_sync_posts($parent_id) {
   $albs = jkpg_collect_albums($parent_id);
   $alb_ids = array();
+
+  // first update posts for current/new albums
   foreach ($albs as $alb) {
     $alb_ids[] = $alb->id;
+    jkpg_mgmt_create_post($alb->adobe_id);
   }
 
-  // first delete posts for old albums
+  // then delete posts for old albums
   $posts = get_posts(array(
     'numberposts' => -1,
     'post_type' => 'jkpg',
@@ -403,8 +433,7 @@ function jkpg_mgmt_sync_posts($parent_id) {
   foreach ($posts as $p) {
     $alb = get_post_meta($p->ID, 'jkpg_album', true);
 
-    if (!in_array($alb, $alb_ids)) {
-      echo "Deleting post $alb {$p->ID}<br/>\n";
+    if (!in_array($alb, $alb_ids) || empty(jkpg_db_p2a_pic_ids($alb))) {
       wp_update_post(array(
         'ID' => $p->ID,
         'post_status' => 'trash',
@@ -412,10 +441,7 @@ function jkpg_mgmt_sync_posts($parent_id) {
     }
   }
 
-  // then update posts for current/new albums
-  foreach ($albs as $alb) {
-    jkpg_mgmt_create_post($alb->adobe_id);
-  }
+  jkpg_sync_notice("Refreshed posts.");
 }
 
 
@@ -530,26 +556,11 @@ function jkpg_mgmt_page_html() {
 
   try {
     if (isset($_REQUEST['sync_all'])) {
-      $op = array('op' => 'sync_catalog', 'recursive' => true);
-      $jkpg_bgproc->push_to_queue($op);
-      $jkpg_bgproc->save()->dispatch();
-    } else if (isset($_REQUEST['sync_catalog'])) {
-      $op = array('op' => 'sync_catalog');
-      $jkpg_bgproc->push_to_queue($op);
-      $jkpg_bgproc->save()->dispatch();
-    } else if (isset($_REQUEST['sync_albums'])) {
-      $options = get_option( 'jkpg_options' );
-      jkpg_mgmt_enqueue_sync_albums($options['jkpg_setting_adobe_rootset'],
-        false);
-      $jkpg_bgproc->save()->dispatch();
-    } else if (isset($_REQUEST['sync_album'])) {
-      jkpg_mgmt_sync_album($_REQUEST['sync_album']);
-    } else if (isset($_REQUEST['req_renditions'])) {
-      jkpg_mgmt_req_renditions($_REQUEST['req_renditions']);
-    } else if (isset($_REQUEST['fetch_renditions'])) {
-      jkpg_mgmt_fetch_renditions($_REQUEST['fetch_renditions']);
-    } else if (isset($_REQUEST['prepare_renditions'])) {
-      jkpg_mgmt_prepare_renditions($_REQUEST['prepare_renditions']);
+      if (!$jkpg_bgproc->is_queued()) {
+        $op = array('op' => 'sync_catalog', 'recursive' => true);
+        $jkpg_bgproc->push_to_queue($op);
+        $jkpg_bgproc->save()->dispatch();
+      }
     } else if (isset($_REQUEST['sync_posts'])) {
       $options = get_option( 'jkpg_options' );
       jkpg_mgmt_sync_posts($options['jkpg_setting_adobe_rootset']);
@@ -589,6 +600,14 @@ function jkpg_mgmt_page_html() {
       $options['jkpg_sync_notices'] = [];
     }
     update_option('jkpg_options', $options);
+
+    if ($jkpg_bgproc->is_queued()) {
+      echo "<p>Synchronization is ongoing.</p>";
+      echo "<p><a href='admin.php?page=jkpg&cancel_bg=1'>Cancel Sync</a></p>";
+    } else {
+      echo "<p><a href='admin.php?page=jkpg&sync_all=1'>Adobe Sync</a></p>";
+      echo "<p><a href='admin.php?page=jkpg&sync_posts=1'>Update Posts</a></p>";
+    }
 
     $root = isset($options['jkpg_setting_adobe_rootset']) ?
       $options['jkpg_setting_adobe_rootset'] : '';
