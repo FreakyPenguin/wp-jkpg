@@ -27,6 +27,12 @@ function jkpg_register_assets() {
 }
 add_action( 'init', 'jkpg_register_assets' );
 
+function jkpg_register_bgproc() {
+  global $jkpg_bgproc;
+  $jkpg_bgproc = new JKPGBgProcess();
+}
+add_action( 'init', 'jkpg_register_bgproc' );
+
 
 /**
  *  * Activate the plugin.
