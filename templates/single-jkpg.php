@@ -14,7 +14,7 @@ $imgbase = '/wp-content/uploads/jkpg/';
       $pids = jkpg_db_p2a_pic_ids($aid);
       ?>
       <h1><?php echo $alb->title; ?></h1>
-      <div class="jkpg-grid grid" data-masonry='{ "itemSelector": ".grid-item", "columnWidth": 200 }'>
+      <div class="jkpg-grid grid" data-masonry='{ "itemSelector": ".grid-item", "columnWidth": 280 }'>
         <?php
         foreach ($pids as $pid) {
           $pic = jkpg_db_pic_get($pid);
@@ -55,7 +55,7 @@ $imgbase = '/wp-content/uploads/jkpg/';
       $ppic = $pics[$i - 1];
       $prev_id = $ppic->id;
     } else {
-      $prev_iq = '';
+      $prev_id = '';
     }
     if ($i != $npics - 1) {
       $npic = $pics[$i + 1];
@@ -107,7 +107,7 @@ $imgbase = '/wp-content/uploads/jkpg/';
     // init Masonry
     var $grid = $('.grid').masonry({
       itemSelector: '.grid-item',
-      columnWidth: 300,
+      columnWidth: 280,
     });
     // layout Masonry after each image loads
     $grid.imagesLoaded().progress( function() {
