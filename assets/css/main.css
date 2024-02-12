@@ -69,3 +69,9 @@ div.popover-image-active a.cancellink {
   right: 2%;
   top: 2%;
 }
+
+/******************************************************************************/
+
+body.toplevel_page_jkpg ul {
+  padding-left: 1em;
+}
