@@ -1,6 +1,6 @@
 <?php
 
-$jkpg_db_version = '0.0.5';
+$jkpg_db_version = '0.0.6';
 
 function jkpg_db_install() {
 	global $wpdb;
@@ -19,6 +19,7 @@ function jkpg_db_install() {
 		title text NOT NULL,
     description text NOT NULL,
     synchronized boolean DEFAULT 0 NOT NULL,
+    piclist_fetched boolean DEFAULT 0 NOT NULL,
     deleted boolean DEFAULT 0 NOT NULL,
 		PRIMARY KEY  (id),
     KEY adobe_id (adobe_id)
@@ -138,16 +139,17 @@ function jkpg_db_albums_get_in($parent_id) {
   return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jkpg_albums WHERE set_id = '$parent_id'" );
 }
 
-function jkpg_db_album_update($id, $set_id, $updated, $title, $desc, $sync)
+function jkpg_db_album_update($id, $set_id, $updated, $title, $desc, $sync,
+                              $piclist_fetched)
 {
   global $wpdb;
   $wpdb->query(
     $wpdb->prepare(
        "UPDATE {$wpdb->prefix}jkpg_albums SET
           set_id = %s, updated = %s, title = %s, description = %s,
-          synchronized = %d
+          synchronized = %d, piclist_fetched = %d
         WHERE id = %d",
-       $set_id, $updated, $title, $desc, $sync, $id
+       $set_id, $updated, $title, $desc, $sync, $piclist_fetched, $id
     )
   );
 }
@@ -162,6 +164,13 @@ function jkpg_db_album_insert($adobe_id, $set_id, $created, $updated, $title,
        VALUES ( %s, %s, %s, %s, %s, %s )",
        $adobe_id, $set_id, $created, $updated, $title, $desc
     )
+  );
+}
+
+function jkpg_db_album_setflag($id, $flagname, $val) {
+  global $wpdb;
+  $wpdb->query(
+    "UPDATE {$wpdb->prefix}jkpg_albums SET $flagname = $val WHERE id = $id"
   );
 }
 
