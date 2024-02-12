@@ -3,12 +3,17 @@ get_header();
 
 $pics = [];
 $imgbase = '/wp-content/uploads/jkpg/';
+
+$args = array(
+	'post_type' => 'jkpg',
+);
+$loop = new WP_Query($args);
 ?>
 	<div id="primary" class="content-area">
 		<main id="main" class="site-main" role="main">
     <div class="jkpg-grid grid" data-masonry='{ "itemSelector": ".grid-item", "columnWidth": 280 }'>
     <?php
-    while ( have_posts() ) : the_post();
+    while ( $loop->have_posts() ) : $loop->the_post();
       $aid = get_post_meta(get_the_ID(), 'jkpg_album', true);
       $alb = jkpg_db_album_get($aid);
       $pids = jkpg_db_p2a_pic_ids($aid);
