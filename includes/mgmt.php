@@ -76,11 +76,11 @@ function jkpg_mgmt_sync_albums() {
         /* if album has been updated, mark as not synchronized */
         if ($ud != $la->updated) {
           $la->synchronized = 0;
-          $la->piclist_synchronized = 0;
+          $la->piclist_fetched = 0;
         }
 
         jkpg_db_album_update($la->id, $parent_id, $ud, $alb->payload->name,
-          '', $la->synchronized, $la->piclist_synchronized);
+          '', $la->synchronized, $la->piclist_fetched);
       } else {
         /* TODO: caption? */
         jkpg_db_album_insert($alb->id, $parent_id,
@@ -114,7 +114,7 @@ function jkpg_mgmt_sync_albums() {
       jkpg_db_set_deleted($set->id);
     }
   }
-  $sets = jkpg_db_albums_get();
+  $albums = jkpg_db_albums_get();
   foreach ($albums as $alb) {
     if (!in_array($alb->adobe_id, $alb_ids)) {
       jkpg_db_album_deleted($alb->id);
