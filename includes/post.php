@@ -58,6 +58,10 @@ add_filter( 'theme_page_templates', 'jkpg_add_template_to_select', 10, 4 );
 
 function jkpg_add_meta_box()
 {
+  if (get_post_meta(get_the_ID(), '_wp_page_template', true)
+          != 'template-jkpg-home.php')
+      return;
+
     add_meta_box(
         'jkpg-meta-box', // id, used as the html id att
         'JKPG Attributes', // meta box title, like "Page Attributes"
