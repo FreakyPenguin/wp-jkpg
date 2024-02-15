@@ -235,14 +235,13 @@ function jkpg_setting_adobe_token() {
   }
 }
 
-function jkpg_setting_set_tree($parent_id, $indent, $options) {
+function jkpg_setting_set_tree($parent_id, $indent, $cur) {
   foreach (jkpg_db_sets_get_in($parent_id) as $set) {
-    $sel = (isset($options['jkpg_setting_adobe_rootset']) &&
-      $options['jkpg_setting_adobe_rootset'] == $set->adobe_id)
+    $sel = (isset($cur) && $cur == $set->adobe_id)
         ? 'selected' : '';
     echo "  <option value='{$set->adobe_id}' $sel>$indent" .
       esc_html($set->title) . "</option>\n";
-      jkpg_setting_set_tree($set->adobe_id, $indent . "&nbsp;&nbsp;", $options);
+      jkpg_setting_set_tree($set->adobe_id, $indent . "&nbsp;&nbsp;", $cur);
   }
 }
 
@@ -254,7 +253,7 @@ function jkpg_setting_adobe_rootset() {
       $options['jkpg_setting_adobe_rootset'] == '') ? 'selected' : '';
 
   echo "  <option value='' $emptysel></option>\n";
-  jkpg_setting_set_tree('', '', $options);
+  jkpg_setting_set_tree('', '', $options['jkpg_setting_adobe_rootset']);
   echo "</select>\n";
 }
 
