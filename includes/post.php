@@ -7,8 +7,8 @@ function jkpg_init_post() {
       'exclude_from_search' => false,
       'has_archive' => 'gallery',
       'labels' => array(
-        'archives' => 'Albums'
-      )
+        'archives' => 'Gallery'
+      ),
   ));
 }
 add_action( 'init', 'jkpg_init_post' );
