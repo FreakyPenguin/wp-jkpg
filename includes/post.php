@@ -85,17 +85,16 @@ function jkpg_meta_box_cb( $post )
     $cur_alb = get_post_meta( $post->ID, 'jpkg_page_album', 1 );
     ?>
     <p class='post-attributes-label-wrapper'>
-      <label class='post-attributes-label' for='jpkg_album'>
-        <select name='jpkg_page_album' id='jpkg_page_album'>
-          <option value=''></option>
-          <?php
-          foreach (jkpg_collect_albums($rootset) as $alb) {
-            $sel = $cur_alb == $alb->id ? 'selected' : '';
-            echo "<option value='{$alb->id}' $sel>{$alb->title}</option>\n";
-          }
-          ?>
-        </select>Album
-      </label>
+      <label class='post-attributes-label' for='jpkg_page_album'>Album</label>
+      <select name='jpkg_page_album' id='jpkg_page_album'>
+        <option value=''></option>
+        <?php
+        foreach (jkpg_collect_albums($rootset) as $alb) {
+          $sel = $cur_alb == $alb->id ? 'selected' : '';
+          echo "<option value='{$alb->id}' $sel>{$alb->title}</option>\n";
+        }
+        ?>
+      </select>
     </p> <?
 }
 
