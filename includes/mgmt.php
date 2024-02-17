@@ -164,9 +164,10 @@ function jkpg_mgmt_sync_album($adobe_id) {
     $pic_ids[] = $pic->id;
 
     $p2a = jkpg_db_p2a_get($pic->id, $alb->id);
-    if (!$p2a) {
-      jkpg_db_p2a_insert($pic->id, $alb->id);
-    }
+    if (!$p2a)
+      jkpg_db_p2a_insert($pic->id, $alb->id, $a->ord, $a->cover);
+    else
+      jkpg_db_p2a_update($pic->id, $alb->id, $a->ord, $a->cover);
   }
 
   // remove deleted pics

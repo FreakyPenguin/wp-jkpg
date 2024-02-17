@@ -1,6 +1,6 @@
 <?php
 
-$jkpg_db_version = '0.0.6';
+$jkpg_db_version = '0.0.7';
 
 function jkpg_db_install() {
 	global $wpdb;
@@ -68,9 +68,12 @@ function jkpg_db_install() {
     id mediumint(9) NOT NULL AUTO_INCREMENT,
     picture mediumint(9) NOT NULL,
     album mediumint(9) NOT NULL,
+    ord varchar(1024) DEFAULT '' NOT NULL,
+    cover boolean DEFAULT 0 NOT NULL,
     PRIMARY KEY  (id),
     KEY picture (picture),
-    KEY album (album)
+    KEY album (album),
+    KEY cover (cover),
 	) $charset_collate;";
 	dbDelta( $sql );
 
@@ -262,15 +265,42 @@ function jkpg_db_p2a_get($pic_id, $album_id) {
   return $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}jkpg_p2a WHERE picture = $pic_id AND album = $album_id" );
 }
 
-function jkpg_db_p2a_insert($pic_id, $album_id) {
+function jkpg_db_p2a_insert($pic_id, $album_id, $ord, $cover) {
   global $wpdb;
   $wpdb->query(
     $wpdb->prepare(
        "INSERT INTO {$wpdb->prefix}jkpg_p2a
-       ( picture, album ) VALUES ( %d, %d )",
-       $pic_id, $album_id
+       ( picture, album, ord, cover ) VALUES ( %d, %d, %s, %d )",
+       $pic_id, $album_id, $ord, $cover
     )
   );
+}
+
+function jkpg_db_p2a_update($pic_id, $album_id, $ord, $cover) {
+  global $wpdb;
+  $wpdb->query(
+    $wpdb->prepare(
+       "UPDATE {$wpdb->prefix}jkpg_p2a
+       SET ord = %s, cover = %d
+       WHERE picture = %d AND album = %d",
+       $ord, $cover, $pic_id, $album_id
+    )
+  );
+}
+
+function jkpg_db_p2a_cover($album_id) {
+  global $wpdb;
+  $pid = $wpdb->get_var(
+    $wpdb->prepare(
+       "SELECT picture FROM {$wpdb->prefix}jkpg_p2a
+       WHERE album = %d AND cover = 1
+       LIMIT 1",
+       $album_id
+    )
+  );
+  if ($pid)
+    return $pid;
+  return jkpg_db_p2a_pic_ids($album_id)[0];
 }
 
 function jkpg_db_p2a_pic_ids($album_id) {
