@@ -128,12 +128,24 @@ class JKPGAdobeLRClient {
 
   function get_all_assets($cat, $album) {
     $ids = [];
-    $url = "https://lr.adobe.io/v2/catalogs/$cat/albums/$album/assets";
+    $metas = [];
+    $url = "https://lr.adobe.io/v2/catalogs/$cat/albums/$album/assets?order_after=-";
     do {
       $assets_req = $this->get_req($url);
 
-      foreach ($assets_req->resources as $res)
+      foreach ($assets_req->resources as $res) {
         $ids[] = $res->asset->id;
+
+        $meta = array('ord' => '', 'cover' => false);
+        if (isset($res->payload)) {
+          if (isset($res->payload->order))
+            $meta['ord'] = $res->payload->order;
+
+          if (isset($res->payload->cover))
+            $meta['cover'] = $res->payload->cover;
+        }
+        $metas[$res->asset->id] = $meta;
+      }
 
       if (isset($assets_req->links) && isset($assets_req->links->next))
         $url = $assets_req->links->next->href;
@@ -157,6 +169,11 @@ class JKPGAdobeLRClient {
         else
           $url = '';
       } while ($url != '');
+    }
+
+    foreach ($assets as $a) {
+      $a->ord = $metas[$a->id]['ord'];
+      $a->cover = $metas[$a->id]['cover'];
     }
 
     return $assets;
