@@ -73,6 +73,28 @@ div.popover-image-active a.cancellink {
 
 /******************************************************************************/
 
+body.toplevel_page_jkpg div.messages {
+  padding-left: 1em;
+  max-height: 20em;
+  overflow-y: scroll;
+}
+
+body.toplevel_page_jkpg div.messages div.msg {
+  border-left: 4px black solid;
+}
+
+body.toplevel_page_jkpg div.messages div.msg-success {
+  border-left-color: green;
+}
+
+body.toplevel_page_jkpg div.messages div.msg-warning {
+  border-left-color: yellow;
+}
+
+body.toplevel_page_jkpg div.messages div.msg-error {
+  border-left-color: red;
+}
+
 body.toplevel_page_jkpg ul {
   padding-left: 1em;
 }

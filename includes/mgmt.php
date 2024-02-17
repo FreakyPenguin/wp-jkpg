@@ -12,27 +12,16 @@ use lsolesen\pel\PelEntryCopyright;
 use lsolesen\pel\PelTag;
 
 function jkpg_sync_error($msg) {
-  $options = get_option( 'jkpg_options' );
-  if (!isset($options['jkpg_sync_errors']))
-    $options['jkpg_sync_errors'] = [];
-  $options['jkpg_sync_errors'][] = $msg;
-  update_option('jkpg_options', $options);
+  jkpg_db_log_insert(3, $msg);
 }
 
 function jkpg_sync_warn($msg) {
-  $options = get_option( 'jkpg_options' );
-  if (!isset($options['jkpg_sync_warns']))
-    $options['jkpg_sync_warns'] = [];
-  $options['jkpg_sync_warns'][] = $msg;
-  update_option('jkpg_options', $options);
+  jkpg_db_log_insert(2, $msg);
 }
 
 function jkpg_sync_notice($msg) {
   $options = get_option( 'jkpg_options' );
-  if (!isset($options['jkpg_sync_notices']))
-    $options['jkpg_sync_notices'] = [];
-  $options['jkpg_sync_notices'][] = $msg;
-  update_option('jkpg_options', $options);
+  jkpg_db_log_insert(1, $msg);
 }
 
 function jkpg_adobe_date_to_db($d) {
@@ -572,6 +561,8 @@ function jkpg_mgmt_page_html() {
       $jkpg_bgproc->pause();
     } else if (isset($_REQUEST['cancel_bg'])) {
       $jkpg_bgproc->cancel();
+    } else if (isset($_REQUEST['clear_log'])) {
+      jkpg_db_log_clear_upto($_REQUEST['clear_log']);
     }
   } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
@@ -580,31 +571,31 @@ function jkpg_mgmt_page_html() {
   ?>
   <div class="wrap">
     <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+    <div class="messages">
     <?php
-    $options = get_option( 'jkpg_options' );
-    if (isset($options['jkpg_sync_errors'])) {
-      foreach ($options['jkpg_sync_errors'] as $err) {
-        echo "<div class='notice notice-error'><p>" . esc_html($err) .
-          "</p></div>\n";
-      }
-      $options['jkpg_sync_errors'] = [];
-    }
-    if (isset($options['jkpg_sync_warns'])) {
-      foreach ($options['jkpg_sync_warns'] as $warn) {
-        echo "<div class='notice notice-warning'><p>" . esc_html($warn) .
-          "</p></div>\n";
-      }
-      $options['jkpg_sync_warns'] = [];
-    }
-    if (isset($options['jkpg_sync_notices'])) {
-      foreach ($options['jkpg_sync_notices'] as $n) {
-        echo "<div class='notice notice-success'><p>" . esc_html($n) .
-          "</p></div>\n";
-      }
-      $options['jkpg_sync_notices'] = [];
-    }
-    update_option('jkpg_options', $options);
+    $logs = jkpg_db_log_get();
+    $max_id = 0;
+    foreach ($logs as $log) {
+        $max_id = max($max_id, $log->id);
+        switch ($log->level) {
+          case 3: $class = 'error'; break;
+          case 2: $class = 'warning'; break;
+          case 1: $class = 'success'; break;
+          default: $class = null;
+        }
 
+        if (!$class)
+          continue;
+
+        echo "<div class='msg msg-$class'>" . esc_html($log->message) .
+          " <span class='timestamp'>({$log->ts})</span></div>\n";
+    }
+    ?>
+    </div>
+    <?php
+    if ($max_id != 0) {
+      echo "<p><a href='admin.php?page=jkpg&clear_log=$max_id'>Clear Messages</a></p>";
+    }
     if ($jkpg_bgproc->is_queued()) {
       echo "<p>Synchronization is ongoing.</p>";
       echo "<p><a href='admin.php?page=jkpg&cancel_bg=1'>Cancel Sync</a></p>";
@@ -613,6 +604,7 @@ function jkpg_mgmt_page_html() {
       echo "<p><a href='admin.php?page=jkpg&sync_posts=1'>Update Posts</a></p>";
     }
 
+    $options = get_option( 'jkpg_options' );
     $root = isset($options['jkpg_setting_adobe_rootset']) ?
       $options['jkpg_setting_adobe_rootset'] : '';
     jkpg_mgmt_album_tree($root);

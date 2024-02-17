@@ -1,6 +1,6 @@
 <?php
 
-$jkpg_db_version = '0.0.8';
+$jkpg_db_version = '0.0.14';
 
 function jkpg_db_install() {
 	global $wpdb;
@@ -75,6 +75,19 @@ function jkpg_db_install() {
     KEY picture (picture),
     KEY album (album),
     KEY cover (cover),
+	) $charset_collate;";
+	dbDelta( $sql );
+
+  $table_name_log = $wpdb->prefix . 'jkpg_log';
+	$sql = "CREATE TABLE $table_name_log (
+    id mediumint(9) NOT NULL AUTO_INCREMENT,
+    message text NOT NULL,
+    level tinyint DEFAULT 0 NOT NULL,
+    ts timestamp NOT NULL,
+    seen boolean DEFAULT 0 NOT NULL,
+    dismissed boolean DEFAULT 0 NOT NULL,
+    PRIMARY KEY  (id)
+    KEY level (level)
 	) $charset_collate;";
 	dbDelta( $sql );
 
@@ -335,6 +348,41 @@ function jkpg_db_p2a_delete($pic_id, $album_id) {
     $wpdb->prepare(
        "DELETE FROM {$wpdb->prefix}jkpg_p2a
        WHERE picture = %d AND album = %d", $pic_id, $album_id
+    )
+  );
+}
+
+
+function jkpg_db_log_insert($level, $msg) {
+  global $wpdb;
+  $wpdb->query(
+    $wpdb->prepare(
+       "INSERT INTO {$wpdb->prefix}jkpg_log
+       ( message, level ) VALUES ( %s, %d )",
+       $msg, $level
+    )
+  );
+}
+
+function jkpg_db_log_get() {
+  global $wpdb;
+  return $wpdb->get_results(
+    $wpdb->prepare(
+       "SELECT * FROM {$wpdb->prefix}jkpg_log
+       WHERE dismissed = 0
+       ORDER BY level DESC, ts DESC"
+    )
+  );
+}
+
+function jkpg_db_log_clear_upto($id) {
+  global $wpdb;
+  $wpdb->query(
+    $wpdb->prepare(
+       "UPDATE {$wpdb->prefix}jkpg_log
+       SET dismissed = 1
+       WHERE $id <= %d AND dismissed = 0",
+       $id
     )
   );
 }
