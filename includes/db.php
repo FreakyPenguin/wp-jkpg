@@ -306,12 +306,27 @@ function jkpg_db_p2a_cover($album_id) {
 
 function jkpg_db_p2a_pic_ids($album_id) {
   global $wpdb;
-  return $wpdb->get_col(
+  $explictly_ordered =  $wpdb->get_col(
     $wpdb->prepare(
        "SELECT picture FROM {$wpdb->prefix}jkpg_p2a
-       WHERE album = %d", $album_id
+       WHERE album = %d AND ord <> ''
+       ORDER BY ord ASC",
+       $album_id
     )
   );
+
+  $implictly_ordered =  $wpdb->get_col(
+    $wpdb->prepare(
+       "SELECT picture FROM {$wpdb->prefix}jkpg_p2a
+       INNER JOIN {$wpdb->prefix}jkpg_pictures
+          ON picture = {$wpdb->prefix}jkpg_pictures.id
+       WHERE album = %d AND ord = ''
+       ORDER BY captured DESC",
+       $album_id
+    )
+  );
+
+  return array_merge($implictly_ordered, $explictly_ordered);
 }
 
 function jkpg_db_p2a_delete($pic_id, $album_id) {
