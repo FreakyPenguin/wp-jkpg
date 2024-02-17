@@ -1,6 +1,6 @@
 <?php
 
-$jkpg_db_version = '0.0.7';
+$jkpg_db_version = '0.0.8';
 
 function jkpg_db_install() {
 	global $wpdb;
@@ -50,6 +50,7 @@ function jkpg_db_install() {
     height mediumint(9) DEFAULT 0 NOT NULL,
 		created datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
     updated  datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+    captured  datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
 		title text NOT NULL,
     description text NOT NULL,
     synchronized boolean DEFAULT 0 NOT NULL,
@@ -212,28 +213,28 @@ function jkpg_db_pic_get_adobe($adobe_id) {
   return $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}jkpg_pictures WHERE adobe_id = '$adobe_id'" );
 }
 
-function jkpg_db_pic_update($id, $updated, $title, $desc, $sync)
+function jkpg_db_pic_update($id, $updated, $captured, $title, $desc, $sync)
 {
   global $wpdb;
   $wpdb->query(
     $wpdb->prepare(
        "UPDATE {$wpdb->prefix}jkpg_pictures SET
-          updated = %s, title = %s, description = %s, synchronized = %d,
+          updated = %s, captured = %s, title = %s, description = %s, synchronized = %d,
           deleted = 0
         WHERE id = %d",
-       $updated, $title, $desc, $sync, $id
+       $updated, $captured, $title, $desc, $sync, $id
     )
   );
 }
 
-function jkpg_db_pic_insert($adobe_id, $created, $updated, $title, $desc) {
+function jkpg_db_pic_insert($adobe_id, $created, $updated, $captured, $title, $desc) {
   global $wpdb;
   $wpdb->query(
     $wpdb->prepare(
        "INSERT INTO {$wpdb->prefix}jkpg_pictures
-       ( adobe_id, created, updated, title, description )
-       VALUES ( %s, %s, %s, %s, %s )",
-       $adobe_id, $created, $updated, $title, $desc
+       ( adobe_id, created, updated, captured, title, description )
+       VALUES ( %s, %s, %s, %s, %s, %s )",
+       $adobe_id, $created, $updated, $captured, $title, $desc
     )
   );
 }

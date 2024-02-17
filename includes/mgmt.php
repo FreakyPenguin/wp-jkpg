@@ -152,12 +152,15 @@ function jkpg_mgmt_sync_album($adobe_id) {
         $pic->synchronized = 0;
 
       // TODO: title, description?
-      jkpg_db_pic_update($a->id, $ud, '', '', $pic->synchronized);
+      jkpg_db_pic_update($pic->id, $ud,
+        jkpg_adobe_date_to_db($a->payload->captureDate), '', '',
+        $pic->synchronized);
     } else {
       //echo "Inserting {$a->id}<br/>";
       // TODO: title, description?
       jkpg_db_pic_insert($a->id, jkpg_adobe_date_to_db($a->created),
-        jkpg_adobe_date_to_db($a->updated), '', '');
+        jkpg_adobe_date_to_db($a->updated),
+        jkpg_adobe_date_to_db($a->payload->captureDate), '', '');
 
       $pic = jkpg_db_pic_get_adobe($a->id);
     }
